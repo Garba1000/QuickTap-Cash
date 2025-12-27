@@ -30,6 +30,32 @@
     input, select {
       padding: 8px; margin: 5px 0; width: 100%; border-radius: 5px; border: none;
     }
+
+    /* JOIN POPUP */
+    #joinPopup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+      z-index: 9999;
+    }
+    #joinPopup button {
+      background: #ffc107;
+      color: #000;
+      padding: 12px 20px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 18px;
+      cursor: pointer;
+    }
   </style>
 
   <!-- Telegram SDK -->
@@ -41,6 +67,18 @@
 </head>
 
 <body>
+
+<!-- JOIN CHANNEL POPUP -->
+<div id="joinPopup">
+  <h2>📢 Join Our Telegram Channel to Continue</h2>
+  <p>You must join before using the app.</p>
+
+  <button onclick="joinChannelClicked()">👉 Join @Konnetearnchannel</button>
+</div>
+
+<!-- MAIN PAGE (hidden until user clicks join button) -->
+<div id="mainPage" style="display:none;">
+
   <h1>⚡ Tap & Earn point</h1>
 
   <p>Points: <span id="points">0</span> | Energy: <span id="energy">50</span></p>
@@ -86,16 +124,14 @@
     <div class="btn" id="copyRefBtn">Copy Link</div>
   </div>
 
+</div> <!-- END MAIN PAGE -->
+
 <script>
 const webApp = Telegram.WebApp;
 
-// RESTORE (NEVER wipe)
+// Restore saved values
 let points = parseInt(localStorage.getItem("points") || "0");
 let energy = parseInt(localStorage.getItem("energy") || "50");
-
-// EXTRA RESTORE (fix browser delay)
-points = parseInt(localStorage.getItem("points") || points);
-energy = parseInt(localStorage.getItem("energy") || energy);
 
 // UI update
 function updateUI() {
@@ -109,12 +145,34 @@ function saveState() {
   localStorage.setItem("energy", energy);
 }
 
-// NEW: auto save even if user closes app
-window.addEventListener("beforeunload", () => {
-  saveState();
-});
+// JOIN BUTTON LOGIC
+function joinChannelClicked() {
+  window.open("https://t.me/Konnetearnchannel", "_blank");
 
-// Tap logic unchanged
+  if (!localStorage.getItem("joinedRewardGiven")) {
+    energy += 1;   // Reward 1 Energy
+    localStorage.setItem("energy", energy);
+    localStorage.setItem("joinedRewardGiven", "yes");
+    alert("🎉 +1 Energy Rewarded!");
+    updateUI();
+  }
+
+  document.getElementById("joinPopup").style.display = "none";
+  document.getElementById("mainPage").style.display = "block";
+}
+
+// Show popup after AdsGram preload
+function showJoinPopupAfterAds() {
+  RewardAd.show().finally(() => {
+    if (!localStorage.getItem("joinedRewardGiven")) {
+      document.getElementById("joinPopup").style.display = "flex";
+    } else {
+      document.getElementById("mainPage").style.display = "block";
+    }
+  });
+}
+
+// Tapping logic
 document.getElementById("tapBtn").addEventListener("click", () => {
   if (energy > 0) {
     points += 5;
@@ -130,7 +188,7 @@ document.getElementById("tapBtn").addEventListener("click", () => {
   }
 });
 
-// Withdraw
+// Withdraw logic
 document.getElementById("withdrawBtn").addEventListener("click", () => {
   const method = document.getElementById("method").value;
   const address = document.getElementById("address").value.trim();
@@ -149,10 +207,10 @@ document.getElementById("withdrawBtn").addEventListener("click", () => {
   Telegram.WebApp.sendData(msg);
 
   points -= amount; saveState(); updateUI();
-  alert("✅ Withdrawal request sent! Admin will process it soon.");
+  alert("✅ Withdrawal request sent!");
 });
 
-// Referral
+// Referral system
 const user = webApp.initDataUnsafe.user || {};
 const userId = user.id || "guest";
 document.getElementById("refLink").value = `https://t.me/Tapancebot?start=${userId}`;
@@ -161,7 +219,7 @@ document.getElementById("copyRefBtn").addEventListener("click", () => {
   refInput.select(); document.execCommand("copy");
 });
 
-// Tasks (unchanged)
+// AdsGram Task system
 let currentTaskIndex = 0;
 const taskIds = ["task-17591", "task-17592", "task-17593", "task-17595", "task-17594", "task-17593"];
 
@@ -210,10 +268,13 @@ document.getElementById("finalTaskBtn").addEventListener("click", () => {
   }
 });
 
-// Page load
+// Start logic on page load
 document.addEventListener("DOMContentLoaded", () => {
   updateUI();
+  showJoinPopupAfterAds();
 });
 </script>
+
 </body>
 </html>
+
