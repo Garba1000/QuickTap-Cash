@@ -72,7 +72,6 @@
 <div id="joinPopup">
   <h2>📢 Join Our Telegram Channel to Continue</h2>
   <p>You must join before using the app.</p>
-
   <button onclick="joinChannelClicked()">👉 Join @Konnetearnchannel</button>
 </div>
 
@@ -151,7 +150,7 @@ function joinChannelClicked() {
 
   if (!localStorage.getItem("joinedRewardGiven")) {
     energy += 1;   // Reward 1 Energy
-    localStorage.setItem("energy", energy);
+    saveState();
     localStorage.setItem("joinedRewardGiven", "yes");
     alert("🎉 +1 Energy Rewarded!");
     updateUI();
@@ -162,29 +161,35 @@ function joinChannelClicked() {
 }
 
 /* -------------------------------------------------------------------
-   FIXED FUNCTION: RewardAd preload → show → then show join popup
+   FIXED FUNCTION: AdsGram Reward preload → show → then show join popup
    blockId: 20440 (NO PREFIX)
 ------------------------------------------------------------------- */
 function showJoinPopupAfterAds() {
-  if (!RewardAd || !RewardAd.load) {
-    document.getElementById("joinPopup").style.display = "flex";
-    return;
-  }
+  try {
+    const rewardAd = window.Adsgram.init({ blockId: "20440" });
 
-  RewardAd.load({ blockId: 20440 })
-    .then(() => {
-      return RewardAd.show();
-    })
-    .catch(() => {
-      console.log("Reward Ad failed");
-    })
-    .finally(() => {
-      if (!localStorage.getItem("joinedRewardGiven")) {
-        document.getElementById("joinPopup").style.display = "flex";
-      } else {
-        document.getElementById("mainPage").style.display = "block";
-      }
-    });
+    rewardAd.show()
+      .then(res => {
+        if(res.done && !localStorage.getItem("joinedRewardGiven")){
+          energy += 1; // reward energy for pre-load
+          saveState();
+          updateUI();
+        }
+      })
+      .catch(err => {
+        console.log("Reward Ad failed:", err);
+      })
+      .finally(() => {
+        if (!localStorage.getItem("joinedRewardGiven")) {
+          document.getElementById("joinPopup").style.display = "flex";
+        } else {
+          document.getElementById("mainPage").style.display = "block";
+        }
+      });
+  } catch (err) {
+    console.log("AdsGram not loaded:", err);
+    document.getElementById("joinPopup").style.display = "flex";
+  }
 }
 
 // Tapping logic
@@ -292,3 +297,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
