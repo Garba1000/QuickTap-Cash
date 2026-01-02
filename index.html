@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tap & Earn</title>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -61,16 +60,8 @@
 
   <!-- Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- AdsGram Reward Ads (Fix) -->
-  <script src="https://sad.adsgram.ai/js/adsgram.min.js"></script>
-  <script>
-    const RewardAd = window.Adsgram?.RewardAd;
-  </script>
-
-  <!-- AdsGram Task SDK -->
+  <!-- AdsGram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-
   <!-- Monetag SDK -->
   <script src='//libtl.com/sdk.js' data-zone='9852168' data-sdk='show_9852168'></script>
 </head>
@@ -138,47 +129,65 @@
 <script>
 const webApp = Telegram.WebApp;
 
+// Restore saved values
 let points = parseInt(localStorage.getItem("points") || "0");
 let energy = parseInt(localStorage.getItem("energy") || "50");
 
+// UI update
 function updateUI() {
   document.getElementById("points").innerText = points;
   document.getElementById("energy").innerText = energy;
 }
 
+// Save to storage
 function saveState() {
   localStorage.setItem("points", points);
   localStorage.setItem("energy", energy);
 }
 
+// JOIN BUTTON LOGIC
 function joinChannelClicked() {
   window.open("https://t.me/Konnetearnchannel", "_blank");
 
   if (!localStorage.getItem("joinedRewardGiven")) {
-    energy += 1;
-    saveState();
+    energy += 1;   // Reward 1 Energy
+    localStorage.setItem("energy", energy);
     localStorage.setItem("joinedRewardGiven", "yes");
     alert("🎉 +1 Energy Rewarded!");
+    updateUI();
   }
 
   document.getElementById("joinPopup").style.display = "none";
   document.getElementById("mainPage").style.display = "block";
 }
 
+/* -------------------------------------------------------------------
+   FIXED FUNCTION: RewardAd preload → show → then show join popup
+   blockId: 20440 (NO PREFIX)
+------------------------------------------------------------------- */
 function showJoinPopupAfterAds() {
-  if (RewardAd) {
-    RewardAd.show().finally(() => {
+  if (!RewardAd || !RewardAd.load) {
+    document.getElementById("joinPopup").style.display = "flex";
+    return;
+  }
+
+  RewardAd.load({ blockId: 20440 })
+    .then(() => {
+      return RewardAd.show();
+    })
+    .catch(() => {
+      console.log("Reward Ad failed");
+    })
+    .finally(() => {
       if (!localStorage.getItem("joinedRewardGiven")) {
         document.getElementById("joinPopup").style.display = "flex";
       } else {
         document.getElementById("mainPage").style.display = "block";
       }
     });
-  } else {
-    document.getElementById("joinPopup").style.display = "flex";
-  }
 }
 
+// Tapping logic
 document.getElementById("tapBtn").addEventListener("click", () => {
   if (energy > 0) {
     points += 5;
@@ -194,13 +203,13 @@ document.getElementById("tapBtn").addEventListener("click", () => {
   }
 });
 
+// Withdraw logic
 document.getElementById("withdrawBtn").addEventListener("click", () => {
   const method = document.getElementById("method").value;
   const address = document.getElementById("address").value.trim();
   const amount = parseInt(document.getElementById("amount").value);
-
-  if (isNaN(amount) || amount < 5000) return alert("Minimum withdrawal is 5000 points");
-  if (points < amount) return alert("Not enough points");
+  if (isNaN(amount) || amount < 5000) { alert("Minimum withdrawal is 5000 points"); return; }
+  if (points < amount) { alert("Not enough points"); return; }
 
   const user = webApp.initDataUnsafe.user || {};
   const msg = JSON.stringify({
@@ -216,15 +225,16 @@ document.getElementById("withdrawBtn").addEventListener("click", () => {
   alert("✅ Withdrawal request sent!");
 });
 
+// Referral system
 const user = webApp.initDataUnsafe.user || {};
 const userId = user.id || "guest";
 document.getElementById("refLink").value = `https://t.me/Tapancebot?start=${userId}`;
-
 document.getElementById("copyRefBtn").addEventListener("click", () => {
   const refInput = document.getElementById("refLink");
   refInput.select(); document.execCommand("copy");
 });
 
+// AdsGram Task system
 let currentTaskIndex = 0;
 const taskIds = ["task-17591", "task-17592", "task-17593", "task-17595", "task-17594", "task-17593"];
 
@@ -273,6 +283,7 @@ document.getElementById("finalTaskBtn").addEventListener("click", () => {
   }
 });
 
+// Start logic on page load
 document.addEventListener("DOMContentLoaded", () => {
   updateUI();
   showJoinPopupAfterAds();
