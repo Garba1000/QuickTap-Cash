@@ -72,7 +72,7 @@
 <div id="joinPopup">
   <h2>📢 Join Our Telegram Channel to Continue</h2>
   <p>You must join before using the app.</p>
-  <button onclick="joinChannelClicked()">👉 Join @Konnetearnchannel</button>
+  <button onclick="joinChannelClicked()">👉 Join @earnzoners</button>
 </div>
 
 <!-- MAIN PAGE (hidden until user clicks join button) -->
@@ -146,7 +146,7 @@ function saveState() {
 
 // JOIN BUTTON LOGIC
 function joinChannelClicked() {
-  window.open("https://t.me/Konnetearnchannel", "_blank");
+  window.open("https://t.me/earnzoners", "_blank");
 
   if (!localStorage.getItem("joinedRewardGiven")) {
     energy += 1;   // Reward 1 Energy
