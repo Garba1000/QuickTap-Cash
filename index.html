@@ -31,8 +31,6 @@ h1, h2 { margin-bottom: 10px; }
 input, select {
   padding: 8px; margin: 5px 0; width: 100%; border-radius: 5px; border: none;
 }
-
-/* JOIN POPUP */
 #joinPopup {
   position: fixed;
   top: 0; left: 0;
@@ -59,31 +57,25 @@ input, select {
 }
 </style>
 
-<!-- Telegram SDK -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<!-- AdsGram SDK -->
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-
 </head>
+
 <body>
 
-<!-- JOIN CHANNEL POPUP -->
 <div id="joinPopup">
   <h2>📢 Join Our Telegram Channel to Continue</h2>
   <p>You must join before using the app.</p>
   <button onclick="joinChannelClicked()">👉 Join @earnzoners</button>
 </div>
 
-<!-- MAIN PAGE -->
 <div id="mainPage" style="display:none;">
 
 <h1>⚡ Tap & Earn point</h1>
 
 <p>Points: <span id="points">0</span> | Energy: <span id="energy">50</span></p>
-<div class="btn" id="tapBtn">⚡ Tap for 30sec an claim 1000 point</div>
+<div class="btn" id="tapBtn">⚡ Tap to convert 1 Energy → 1 Point</div>
 
-<!-- Tasks -->
 <div class="section">
 <h2>📋 Tasks</h2>
 <div id="taskIntro">
@@ -98,7 +90,6 @@ input, select {
 </div>
 </div>
 
-<!-- Withdrawal -->
 <div class="section">
 <h2>💳 Withdraw</h2>
 <label>Method:</label>
@@ -111,11 +102,10 @@ input, select {
 <label>Wallet/Account:</label>
 <input type="text" id="address" placeholder="Enter wallet or account"/>
 <label>Amount:</label>
-<input type="number" id="amount" placeholder="Min 5000"/>
+<input type="number" id="amount" placeholder="Minimum 50000"/>
 <div class="btn" id="withdrawBtn">Request Withdraw</div>
 </div>
 
-<!-- Referral -->
 <div class="section">
 <h2>👥 Referral Program</h2>
 <p>Your referral link:</p>
@@ -135,29 +125,19 @@ function updateUI(){
   document.getElementById("points").innerText = points;
   document.getElementById("energy").innerText = energy;
 }
-
 function saveState(){
   localStorage.setItem("points", points);
   localStorage.setItem("energy", energy);
 }
 
-/* JOIN BUTTON */
+/* JOIN */
 function joinChannelClicked(){
   window.open("https://t.me/earnzoners","_blank");
-
-  if(!localStorage.getItem("joinedRewardGiven")){
-    energy += 2;
-    localStorage.setItem("joinedRewardGiven","yes");
-    saveState();
-    alert("🎉 +2 Energy Rewarded!");
-    updateUI();
-  }
-
   document.getElementById("joinPopup").style.display="none";
   document.getElementById("mainPage").style.display="block";
 }
 
-/* Show Reward Ad Before Join */
+/* Show Ad before Join */
 function showJoinPopupAfterAds(){
   try{
     const rewardAd = window.Adsgram.init({blockId:"21545"});
@@ -169,32 +149,42 @@ function showJoinPopupAfterAds(){
   }
 }
 
-/* TAP SYSTEM */
+/* TAP = 1 ENERGY → 1 POINT */
 document.getElementById("tapBtn").addEventListener("click",()=>{
-  if(energy>0){
-    points+=5;
-    energy-=5;
-    saveState(); updateUI();
+  if(energy > 0){
+    energy -= 1;
+    points += 1;
+    saveState();
+    updateUI();
   }else{
     try{
       const rewardAd = window.Adsgram.init({blockId:"21545"});
       rewardAd.show().then(res=>{
         if(res.done){
-          energy+=2;
-          saveState(); updateUI();
+          energy += 2;
+          saveState();
+          updateUI();
         }
       });
     }catch(e){}
   }
 });
 
-/* WITHDRAW */
+/* WITHDRAW (MIN 50000) */
 document.getElementById("withdrawBtn").addEventListener("click",()=>{
   const method=document.getElementById("method").value;
   const address=document.getElementById("address").value.trim();
   const amount=parseInt(document.getElementById("amount").value);
-  if(isNaN(amount)||amount<5000){alert("Minimum withdrawal is 5000 points");return;}
-  if(points<amount){alert("Not enough points");return;}
+
+  if(isNaN(amount)||amount<50000){
+    alert("Minimum withdrawal is 50000 points ($50)");
+    return;
+  }
+
+  if(points<amount){
+    alert("Not enough points");
+    return;
+  }
 
   const user=webApp.initDataUnsafe.user||{};
   const msg=JSON.stringify({
@@ -207,7 +197,8 @@ document.getElementById("withdrawBtn").addEventListener("click",()=>{
   Telegram.WebApp.sendData(msg);
 
   points-=amount;
-  saveState(); updateUI();
+  saveState();
+  updateUI();
   alert("✅ Withdrawal request sent!");
 });
 
@@ -217,7 +208,8 @@ const userId=user.id||"guest";
 document.getElementById("refLink").value=`https://t.me/Tapancebot?start=${userId}`;
 document.getElementById("copyRefBtn").addEventListener("click",()=>{
   const refInput=document.getElementById("refLink");
-  refInput.select(); document.execCommand("copy");
+  refInput.select();
+  document.execCommand("copy");
 });
 
 /* TASK SYSTEM */
@@ -232,10 +224,10 @@ function loadTask(blockId){
 
   const task=container.querySelector(".task");
   task.addEventListener("reward",(e)=>{
-    const reward=e.detail?.reward||10;
-    points+=reward;
-    energy+=2;   // ✅ ONLY 2 ENERGY
-    saveState(); updateUI();
+    points += 2;
+    energy += 2;
+    saveState();
+    updateUI();
 
     if(currentTaskIndex<taskIds.length-1){
       document.getElementById("nextTaskBtnContainer").classList.remove("hidden");
@@ -262,7 +254,8 @@ document.getElementById("finalTaskBtn").addEventListener("click",()=>{
     rewardAd.show().then(res=>{
       if(res.done){
         energy+=2;
-        saveState(); updateUI();
+        saveState();
+        updateUI();
       }
       document.getElementById("taskIntro").classList.remove("hidden");
       document.getElementById("adsgram-container").classList.add("hidden");
@@ -272,7 +265,6 @@ document.getElementById("finalTaskBtn").addEventListener("click",()=>{
   }catch(e){}
 });
 
-/* ON LOAD */
 document.addEventListener("DOMContentLoaded",()=>{
   updateUI();
   showJoinPopupAfterAds();
