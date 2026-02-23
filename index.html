@@ -150,19 +150,32 @@ function showJoinPopupAfterAds(){
   }
 }
 
-/* TAP = convert only */
+/* TAP SYSTEM */
 document.getElementById("tapBtn").addEventListener("click",()=>{
+
   if(energy > 0){
     energy -= 1;
     points += 1;
     saveState();
     updateUI();
-  }else{
-    alert("No energy left. Complete tasks or watch ads to earn energy.");
+  } 
+  else {
+    try{
+      const rewardAd = window.Adsgram.init({blockId:"21545"});
+      rewardAd.show().then(res=>{
+        if(res.done){
+          energy += 2; // reward only 2 energy
+          saveState();
+          updateUI();
+          alert("⚡ You received 2 Energy!");
+        }
+      });
+    }catch(e){}
   }
+
 });
 
-/* WITHDRAW (MIN 50000) */
+/* WITHDRAW */
 document.getElementById("withdrawBtn").addEventListener("click",()=>{
   const method=document.getElementById("method").value;
   const address=document.getElementById("address").value.trim();
@@ -216,7 +229,7 @@ function loadTask(blockId){
 
   const task=container.querySelector(".task");
   task.addEventListener("reward",(e)=>{
-    energy += 2;   // ONLY ENERGY REWARD
+    energy += 2; // reward ONLY energy
     saveState();
     updateUI();
 
@@ -244,7 +257,7 @@ document.getElementById("finalTaskBtn").addEventListener("click",()=>{
     const rewardAd=window.Adsgram.init({blockId:"21545"});
     rewardAd.show().then(res=>{
       if(res.done){
-        energy+=2;  // ONLY ENERGY
+        energy+=2;
         saveState();
         updateUI();
       }
