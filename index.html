@@ -1,274 +1,127 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tap & Earn</title>
+<meta charset="UTF-8">
+<title>Tap Energy App</title>
+
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #000;
-  color: #fff;
-  margin: 0;
-  padding: 20px;
+body{
+  font-family: Arial;
+  text-align:center;
+  background:#111;
+  color:white;
 }
-h1, h2 { margin-bottom: 10px; }
-.section { margin-top: 20px; padding: 15px; background: #111; border-radius: 10px; }
-.btn {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 15px;
-  border-radius: 8px;
-  background: #ffc107;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  text-align: center;
+button{
+  padding:15px 25px;
+  margin:10px;
+  font-size:18px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
 }
-.btn:active { transform: scale(0.95); }
-.hidden { display: none; }
-input, select {
-  padding: 8px; margin: 5px 0; width: 100%; border-radius: 5px; border: none;
+#tapBtn{
+  background:#00c853;
+  color:white;
 }
-#joinPopup {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.95);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  text-align: center;
-  padding: 20px;
-  z-index: 9999;
+#adBtn{
+  background:#2962ff;
+  color:white;
 }
-#joinPopup button {
-  background: #ffc107;
-  color: #000;
-  padding: 12px 20px;
-  margin-top: 20px;
-  border: none;
-  border-radius: 10px;
-  font-weight: bold;
-  font-size: 18px;
-  cursor: pointer;
+#withdrawBtn{
+  background:#ff1744;
+  color:white;
 }
 </style>
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 </head>
 
 <body>
 
-<div id="joinPopup">
-  <h2>📢 Join Our Telegram Channel to Continue</h2>
-  <p>You must join before using the app.</p>
-  <button onclick="joinChannelClicked()">👉 Join @earnzoners</button>
-</div>
+<h1>🔥 Tap & Earn</h1>
 
-<div id="mainPage" style="display:none;">
+<h2>Points: <span id="points">0</span></h2>
+<h3>Energy: <span id="energy">0</span></h3>
 
-<h1>⚡ Tap & Earn point</h1>
+<button id="tapBtn">TAP</button>
+<br>
+<button id="adBtn">Watch Ad (+2 Energy)</button>
+<br>
+<button id="taskBtn">Complete Task (+2 Energy)</button>
+<br><br>
 
-<p>Points: <span id="points">0</span> | Energy: <span id="energy">50</span></p>
-<div class="btn" id="tapBtn">⚡ Tap to convert 1 Energy → 1 Point</div>
-
-<div class="section">
-<h2>📋 Tasks</h2>
-<div id="taskIntro">
-  <div class="btn" id="startTasksBtn">Start Tasks</div>
-</div>
-<div id="adsgram-container" class="hidden"></div>
-<div id="nextTaskBtnContainer" class="hidden">
-  <div class="btn" id="nextTaskBtn">➡️ Next Task</div>
-</div>
-<div id="finalTaskBtnContainer" class="hidden">
-  <div class="btn" id="finalTaskBtn">🏁 Finish Tasks</div>
-</div>
-</div>
-
-<div class="section">
-<h2>💳 Withdraw</h2>
-<label>Method:</label>
-<select id="method">
-<option value="Litecoin">Litecoin</option>
-<option value="USDT">USDT</option>
-<option value="Payeer">Payeer</option>
-<option value="Bank">Bank Account</option>
-</select>
-<label>Wallet/Account:</label>
-<input type="text" id="address" placeholder="Enter wallet or account"/>
-<label>Amount:</label>
-<input type="number" id="amount" placeholder="Minimum 50000"/>
-<div class="btn" id="withdrawBtn">Request Withdraw</div>
-</div>
-
-<div class="section">
-<h2>👥 Referral Program</h2>
-<p>Your referral link:</p>
-<input type="text" id="refLink" readonly/>
-<div class="btn" id="copyRefBtn">Copy Link</div>
-</div>
-
-</div>
+<h3>Minimum Withdraw: 50,000 Points ($60)</h3>
+<button id="withdrawBtn">Withdraw</button>
 
 <script>
-const webApp = Telegram.WebApp;
 
-let points = parseInt(localStorage.getItem("points") || "0");
-let energy = parseInt(localStorage.getItem("energy") || "50");
+let points = 0;
+let energy = 0;
 
-function updateUI(){
-  document.getElementById("points").innerText = points;
-  document.getElementById("energy").innerText = energy;
-}
 function saveState(){
   localStorage.setItem("points", points);
   localStorage.setItem("energy", energy);
 }
 
-/* JOIN */
-function joinChannelClicked(){
-  window.open("https://t.me/earnzoners","_blank");
-  document.getElementById("joinPopup").style.display="none";
-  document.getElementById("mainPage").style.display="block";
+function loadState(){
+  points = parseInt(localStorage.getItem("points")) || 0;
+  energy = parseInt(localStorage.getItem("energy")) || 0;
+  updateUI();
 }
 
-/* Show Ad before Join */
-function showJoinPopupAfterAds(){
-  try{
-    const rewardAd = window.Adsgram.init({blockId:"21545"});
-    rewardAd.show().finally(()=>{
-      document.getElementById("joinPopup").style.display="flex";
-    });
-  }catch(e){
-    document.getElementById("joinPopup").style.display="flex";
-  }
+function updateUI(){
+  document.getElementById("points").innerText = points;
+  document.getElementById("energy").innerText = energy;
 }
 
-/* TAP = 1 ENERGY → 1 POINT */
-document.getElementById("tapBtn").addEventListener("click",()=>{
+// TAP BUTTON (ENERGY → POINTS 1:1)
+document.getElementById("tapBtn").addEventListener("click", () => {
   if(energy > 0){
     energy -= 1;
-    points += 1;
+    points += 1; // 1 Energy = 1 Point
     saveState();
     updateUI();
-  }else{
-    try{
-      const rewardAd = window.Adsgram.init({blockId:"21545"});
-      rewardAd.show().then(res=>{
-        if(res.done){
-          energy += 2;
-          saveState();
-          updateUI();
-        }
-      });
-    }catch(e){}
+  } else {
+    alert("No energy! Watch ad or complete task.");
   }
 });
 
-/* WITHDRAW (MIN 50000) */
-document.getElementById("withdrawBtn").addEventListener("click",()=>{
-  const method=document.getElementById("method").value;
-  const address=document.getElementById("address").value.trim();
-  const amount=parseInt(document.getElementById("amount").value);
-
-  if(isNaN(amount)||amount<50000){
-    alert("Minimum withdrawal is 50000 points ($50)");
-    return;
-  }
-
-  if(points<amount){
-    alert("Not enough points");
-    return;
-  }
-
-  const user=webApp.initDataUnsafe.user||{};
-  const msg=JSON.stringify({
-    type:"withdraw_request",
-    user_id:user.id,
-    username:user.username||"No username",
-    amount,method,address
-  });
-
-  Telegram.WebApp.sendData(msg);
-
-  points-=amount;
-  saveState();
-  updateUI();
-  alert("✅ Withdrawal request sent!");
-});
-
-/* REFERRAL */
-const user=webApp.initDataUnsafe.user||{};
-const userId=user.id||"guest";
-document.getElementById("refLink").value=`https://t.me/Tapancebot?start=${userId}`;
-document.getElementById("copyRefBtn").addEventListener("click",()=>{
-  const refInput=document.getElementById("refLink");
-  refInput.select();
-  document.execCommand("copy");
-});
-
-/* TASK SYSTEM */
-let currentTaskIndex=0;
-const taskIds=["task-21546","task-21547","task-21548","task-21549","task-21550","task-21551"];
-
-function loadTask(blockId){
-  const container=document.getElementById("adsgram-container");
-  container.innerHTML=`<adsgram-task class="task" data-block-id="${blockId}"></adsgram-task>`;
-  container.classList.remove("hidden");
-  document.getElementById("taskIntro").classList.add("hidden");
-
-  const task=container.querySelector(".task");
-  task.addEventListener("reward",(e)=>{
-    points += 2;
-    energy += 2;
-    saveState();
-    updateUI();
-
-    if(currentTaskIndex<taskIds.length-1){
-      document.getElementById("nextTaskBtnContainer").classList.remove("hidden");
-    }else{
-      document.getElementById("finalTaskBtnContainer").classList.remove("hidden");
-    }
-  });
-}
-
-document.getElementById("startTasksBtn").addEventListener("click",()=>{
-  currentTaskIndex=0;
-  loadTask(taskIds[currentTaskIndex]);
-});
-
-document.getElementById("nextTaskBtn").addEventListener("click",()=>{
-  currentTaskIndex++;
-  document.getElementById("nextTaskBtnContainer").classList.add("hidden");
-  loadTask(taskIds[currentTaskIndex]);
-});
-
-document.getElementById("finalTaskBtn").addEventListener("click",()=>{
+// WATCH AD (+2 ENERGY ONLY)
+document.getElementById("adBtn").addEventListener("click", () => {
   try{
-    const rewardAd=window.Adsgram.init({blockId:"21545"});
-    rewardAd.show().then(res=>{
+    const rewardAd = window.Adsgram.init({ blockId: "21545" });
+
+    rewardAd.show().then(res => {
       if(res.done){
-        energy+=2;
+        energy += 2; // ONLY ENERGY
         saveState();
         updateUI();
       }
-      document.getElementById("taskIntro").classList.remove("hidden");
-      document.getElementById("adsgram-container").classList.add("hidden");
-      document.getElementById("finalTaskBtnContainer").classList.add("hidden");
-      currentTaskIndex=0;
     });
-  }catch(e){}
+
+  } catch(e){
+    console.log("AdsGram error", e);
+  }
 });
 
-document.addEventListener("DOMContentLoaded",()=>{
+// COMPLETE TASK (+2 ENERGY ONLY)
+document.getElementById("taskBtn").addEventListener("click", () => {
+  energy += 2; // ONLY ENERGY
+  saveState();
   updateUI();
-  showJoinPopupAfterAds();
 });
+
+// WITHDRAW
+document.getElementById("withdrawBtn").addEventListener("click", () => {
+  if(points >= 50000){
+    alert("Withdrawal request sent! ($60)");
+  } else {
+    alert("Minimum withdrawal is 50,000 points ($60)");
+  }
+});
+
+loadState();
+
 </script>
 
 </body>
