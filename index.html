@@ -122,7 +122,7 @@ document.getElementById("tapBtn").addEventListener("click",()=>{
     alert("⚡ No energy! Watch ad to refill.");
 
     try{
-      const ad = window.Adsgram.init({blockId:"26565"});
+      const ad = window.Adsgram.init({blockId:"26796"});
       ad.show().then(res=>{
         if(res.done){
           energy += 5;
@@ -139,7 +139,7 @@ document.getElementById("boostBtn").addEventListener("click",()=>{
   alert("🚀 Watch ad to activate 2x boost for 20 seconds");
 
   try{
-    const ad = window.Adsgram.init({blockId:"26563"});
+    const ad = window.Adsgram.init({blockId:"26796"});
     ad.show().then(res=>{
       if(res.done){
         boostActive = true;
@@ -157,7 +157,7 @@ document.getElementById("boostBtn").addEventListener("click",()=>{
 /* BONUS */
 function watchBonusAd(){
   try{
-    const ad = window.Adsgram.init({blockId:"26563"});
+    const ad = window.Adsgram.init({blockId:"26796"});
     ad.show().then(res=>{
       if(res.done){
         points += 10;
@@ -170,7 +170,7 @@ function watchBonusAd(){
 
 /* TASK SYSTEM */
 let currentTaskIndex=0;
-const taskIds=["task-21546","task-21547","task-21548"];
+const taskIds=["task-26797","task-26798","task-26799"];
 
 function loadTask(blockId){
   const container=document.getElementById("adsgram-container");
