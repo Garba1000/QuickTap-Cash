@@ -45,13 +45,11 @@ input, select {
 
 <div class="btn" id="tapBtn">⚡ Tap (1 Energy → 1 Point)</div>
 <div class="btn" id="boostBtn">🚀 Activate 2x Boost (Watch Ad)</div>
-<div class="btn" onclick="watchBonusAd()">🎁 Watch Ad for +10 Points</div>
+<div class="btn" id="bonusBtn">🎁 Watch Ad for +10 Points</div>
 
 <div class="section">
-<h2>📢 Community</h2>
-<div class="btn" onclick="window.open('https://t.me/crytocurrentupdate','_blank')">
-👉 Join our Telegram Channel
-</div>
+<h2>🎁 Daily Reward</h2>
+<div class="btn" id="dailyBtn">Claim Daily Bonus (+20 Points)</div>
 </div>
 
 <div class="section">
@@ -96,6 +94,16 @@ let energy = parseInt(localStorage.getItem("energy") || "50");
 
 let boostActive = false;
 
+/* SAVE COOLDOWNS */
+let lastBonusAd = parseInt(localStorage.getItem("lastBonusAd")||"0");
+let lastBoostAd = parseInt(localStorage.getItem("lastBoostAd")||"0");
+let lastDaily = parseInt(localStorage.getItem("lastDaily")||"0");
+
+const BONUS_COOLDOWN = 60000;
+const BOOST_COOLDOWN = 120000;
+const DAILY_COOLDOWN = 86400000;
+
+/* UI */
 function updateUI(){
   document.getElementById("points").innerText = points;
   document.getElementById("energy").innerText = energy;
@@ -103,10 +111,30 @@ function updateUI(){
 function saveState(){
   localStorage.setItem("points", points);
   localStorage.setItem("energy", energy);
+  localStorage.setItem("lastBonusAd", lastBonusAd);
+  localStorage.setItem("lastBoostAd", lastBoostAd);
+  localStorage.setItem("lastDaily", lastDaily);
 }
 
-/* TAP SYSTEM */
+/* ⚡ ENERGY AUTO REFILL */
+setInterval(()=>{
+  if(energy < 50){
+    energy++;
+    saveState();
+    updateUI();
+  }
+},30000);
+
+/* 🚫 ANTI AUTO CLICK */
+let lastTapTime = 0;
+
 document.getElementById("tapBtn").addEventListener("click",()=>{
+  let now = Date.now();
+  if(now - lastTapTime < 200){
+    return; // block spam
+  }
+  lastTapTime = now;
+
   if(energy > 0){
     energy--;
 
@@ -119,56 +147,75 @@ document.getElementById("tapBtn").addEventListener("click",()=>{
     saveState();
     updateUI();
   } else {
-    alert("⚡ No energy! Watch ad to refill.");
-
-    try{
-      const ad = window.Adsgram.init({blockId:"26796"});
-      ad.show().then(res=>{
-        if(res.done){
-          energy += 5;
-          saveState();
-          updateUI();
-        }
-      });
-    }catch(e){}
+    alert("⚡ No energy! Use bonus or tasks.");
   }
 });
 
-/* BOOST SYSTEM */
+/* BOOST */
 document.getElementById("boostBtn").addEventListener("click",()=>{
-  alert("🚀 Watch ad to activate 2x boost for 20 seconds");
+  let now = Date.now();
+  if(now - lastBoostAd < BOOST_COOLDOWN){
+    alert("⏳ Wait before using boost again");
+    return;
+  }
+
+  if(!confirm("Watch ad to activate 2x boost?")) return;
 
   try{
     const ad = window.Adsgram.init({blockId:"26796"});
     ad.show().then(res=>{
       if(res.done){
+        lastBoostAd = Date.now();
         boostActive = true;
-        alert("🔥 Boost Activated!");
 
         setTimeout(()=>{
           boostActive = false;
-          alert("⛔ Boost Ended");
         },20000);
+
+        saveState();
       }
     });
   }catch(e){}
 });
 
 /* BONUS */
-function watchBonusAd(){
+document.getElementById("bonusBtn").addEventListener("click",()=>{
+  let now = Date.now();
+  if(now - lastBonusAd < BONUS_COOLDOWN){
+    alert("⏳ Wait before next bonus");
+    return;
+  }
+
+  if(!confirm("Watch ad to earn +10 points?")) return;
+
   try{
     const ad = window.Adsgram.init({blockId:"26796"});
     ad.show().then(res=>{
       if(res.done){
+        lastBonusAd = Date.now();
         points += 10;
         saveState();
         updateUI();
       }
     });
   }catch(e){}
-}
+});
 
-/* TASK SYSTEM */
+/* 🎁 DAILY */
+document.getElementById("dailyBtn").onclick=()=>{
+  let now = Date.now();
+  if(now - lastDaily < DAILY_COOLDOWN){
+    alert("⏳ Come back tomorrow");
+    return;
+  }
+
+  points += 20;
+  lastDaily = Date.now();
+  saveState();
+  updateUI();
+};
+
+/* TASK SYSTEM (UNCHANGED) */
 let currentTaskIndex=0;
 const taskIds=["task-26797","task-26798","task-26799"];
 
@@ -203,7 +250,7 @@ document.getElementById("nextTaskBtn").onclick=()=>{
 };
 
 document.getElementById("finalTaskBtn").onclick=()=>{
-  alert("🎁 Watch ad for final bonus");
+  if(!confirm("Watch ad for final bonus?")) return;
 
   try{
     const ad = window.Adsgram.init({blockId:"23578"});
