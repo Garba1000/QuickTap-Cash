@@ -41,9 +41,9 @@ input, select {
 
 <h1>⚡ Tap & Earn point</h1>
 
-<p>Points: <span id="points">0</span> | Energy: <span id="energy">50</span></p>
+<p>Points: <span id="points">0</span></p>
 
-<div class="btn" id="tapBtn">⚡ Tap (1 Energy → 1 Point)</div>
+<div class="btn" id="tapBtn">⚡ Tap (1 Tap → 1 Point)</div>
 <div class="btn" id="boostBtn">🚀 Activate 2x Boost (Watch Ad)</div>
 <div class="btn" id="bonusBtn">🎁 Watch Ad for +10 Points</div>
 
@@ -90,7 +90,6 @@ input, select {
 const webApp = Telegram.WebApp;
 
 let points = parseInt(localStorage.getItem("points") || "0");
-let energy = parseInt(localStorage.getItem("energy") || "50");
 
 let boostActive = false;
 
@@ -106,49 +105,32 @@ const DAILY_COOLDOWN = 86400000;
 /* UI */
 function updateUI(){
   document.getElementById("points").innerText = points;
-  document.getElementById("energy").innerText = energy;
 }
 function saveState(){
   localStorage.setItem("points", points);
-  localStorage.setItem("energy", energy);
   localStorage.setItem("lastBonusAd", lastBonusAd);
   localStorage.setItem("lastBoostAd", lastBoostAd);
   localStorage.setItem("lastDaily", lastDaily);
 }
-
-/* ⚡ ENERGY AUTO REFILL */
-setInterval(()=>{
-  if(energy < 50){
-    energy++;
-    saveState();
-    updateUI();
-  }
-},30000);
 
 /* 🚫 ANTI AUTO CLICK */
 let lastTapTime = 0;
 
 document.getElementById("tapBtn").addEventListener("click",()=>{
   let now = Date.now();
-  if(now - lastTapTime < 200){
+  if(now - lastTapTime < 100){
     return; // block spam
   }
   lastTapTime = now;
 
-  if(energy > 0){
-    energy--;
-
-    if(boostActive){
-      points += 2;
-    } else {
-      points += 1;
-    }
-
-    saveState();
-    updateUI();
+  if(boostActive){
+    points += 2;
   } else {
-    alert("⚡ No energy! Use bonus or tasks.");
+    points += 1;
   }
+
+  saveState();
+  updateUI();
 });
 
 /* BOOST */
@@ -215,7 +197,7 @@ document.getElementById("dailyBtn").onclick=()=>{
   updateUI();
 };
 
-/* TASK SYSTEM (UNCHANGED) */
+/* TASK SYSTEM (UNCHANGED STRUCTURE) */
 let currentTaskIndex=0;
 const taskIds=["task-26797","task-26798","task-26799"];
 
@@ -226,7 +208,7 @@ function loadTask(blockId){
 
   const task=container.querySelector(".task");
   task.addEventListener("reward",()=>{
-    energy += 3;
+    points += 3;
     saveState();
     updateUI();
 
@@ -256,7 +238,7 @@ document.getElementById("finalTaskBtn").onclick=()=>{
     const ad = window.Adsgram.init({blockId:"23578"});
     ad.show().then(res=>{
       if(res.done){
-        energy += 5;
+        points += 5;
         saveState();
         updateUI();
       }
