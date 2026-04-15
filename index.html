@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tap & Earn Pro</title>
+<title>Tap & Earn Game</title>
 
 <style>
 body{
-  font-family: Arial;
-  background:#0d0d0d;
-  color:#fff;
   margin:0;
   padding:20px;
+  font-family: Arial;
+  background:#0c0c0c;
+  color:#fff;
 }
+
 h1{font-size:22px}
 
 .section{
@@ -26,11 +27,11 @@ h1{font-size:22px}
   display:block;
   margin-top:10px;
   padding:12px;
-  background:#f5c542;
+  background:#f6c445;
   color:#000;
   font-weight:bold;
-  border-radius:8px;
   text-align:center;
+  border-radius:8px;
   cursor:pointer;
 }
 
@@ -40,8 +41,8 @@ input,select{
   width:100%;
   padding:10px;
   margin-top:8px;
-  border-radius:6px;
   border:none;
+  border-radius:6px;
 }
 </style>
 
@@ -51,34 +52,39 @@ input,select{
 
 <body>
 
-<h1>⚡ Tap & Earn Pro</h1>
+<h1>⚡ Tap & Earn Game</h1>
 
-<p>Balance: <span id="points">0</span> Points</p>
+<p>XP Balance: <span id="points">0</span></p>
 
 <div class="section">
-  <h2>📺 Reward Ads</h2>
-  <div class="btn" id="adReward">Watch Ad & Earn 5 Points</div>
+  <h2>🎮 Tap System (XP)</h2>
+  <div class="btn" id="tapBtn">Tap +1 XP</div>
 </div>
 
 <div class="section">
-  <h2>🎯 Task Ads</h2>
-  <div class="btn" id="startTask">Start Task Ads</div>
+  <h2>📺 Reward Ads</h2>
+  <div class="btn" id="rewardAd">Watch Ad (Bonus XP)</div>
+</div>
 
-  <div id="taskBox" style="display:none;">
-    <div class="btn" id="taskNext">Next Task</div>
-    <div class="btn" id="taskFinish">Finish Tasks</div>
+<div class="section">
+  <h2>🎯 Task Mode</h2>
+  <div class="btn" id="startTask">Start Tasks</div>
+
+  <div id="taskArea" style="display:none;">
+    <div class="btn" id="nextTask">Next Task</div>
+    <div class="btn" id="finishTask">Finish Task</div>
   </div>
 </div>
 
 <div class="section">
-  <h2>🎁 Daily Bonus</h2>
-  <div class="btn" id="daily">Claim Daily (+20)</div>
+  <h2>🎁 Daily Reward</h2>
+  <div class="btn" id="dailyBtn">Claim Daily XP</div>
 </div>
 
 <div class="section">
   <h2>💳 Withdraw</h2>
 
-  <p>Minimum: <b>10,000 points</b></p>
+  <p>Minimum: <b>10,000 XP</b></p>
 
   <select id="method">
     <option>Litecoin</option>
@@ -90,41 +96,56 @@ input,select{
   <input id="address" placeholder="Wallet"/>
   <input id="amount" type="number" placeholder="Amount"/>
 
-  <div class="btn" id="withdraw">Request Withdraw</div>
+  <div class="btn" id="withdrawBtn">Request Withdraw</div>
 </div>
 
 <script>
 const tg = Telegram.WebApp;
-let points = parseInt(localStorage.getItem("points") || "0");
+
+let xp = parseInt(localStorage.getItem("xp") || "0");
 
 function update(){
-  document.getElementById("points").innerText = points;
-  localStorage.setItem("points", points);
+  document.getElementById("points").innerText = xp;
+  localStorage.setItem("xp", xp);
 }
 
 /* =========================
-   ADSGRAM BLOCK IDS
+   ADSGRAM BLOCKS
 ========================= */
-
-// Reward ads
 const rewardAd = Adsgram.init({ blockId: "26796" });
-
-// Task ads (you can add more)
 const taskAd1 = Adsgram.init({ blockId: "27333" });
 const taskAd2 = Adsgram.init({ blockId: "27334" });
 const taskAd3 = Adsgram.init({ blockId: "27335" });
 
 /* =========================
-   REWARDED AD (SAFE)
+   TAP SYSTEM (SAFE XP ONLY)
 ========================= */
-document.getElementById("adReward").onclick = async () => {
+let lastTap = 0;
+
+document.getElementById("tapBtn").onclick = () => {
+  let now = Date.now();
+
+  if(now - lastTap < 150){
+    return;
+  }
+
+  lastTap = now;
+
+  xp += 1;
+  update();
+};
+
+/* =========================
+   REWARD AD
+========================= */
+document.getElementById("rewardAd").onclick = async () => {
   try {
     const res = await rewardAd.show();
 
     if(res && res.done){
-      points += 5;
+      xp += 5;
       update();
-      alert("Reward added!");
+      alert("Bonus XP added!");
     }
   } catch(e){}
 };
@@ -132,41 +153,38 @@ document.getElementById("adReward").onclick = async () => {
 /* =========================
    TASK SYSTEM
 ========================= */
-let taskIndex = 0;
+let index = 0;
 const tasks = [taskAd1, taskAd2, taskAd3];
 
-document.getElementById("startTask").onclick = async () => {
-  taskIndex = 0;
-  document.getElementById("taskBox").style.display = "block";
-
-  alert("Task started. Watch ads to continue.");
+document.getElementById("startTask").onclick = () => {
+  index = 0;
+  document.getElementById("taskArea").style.display = "block";
 };
 
-document.getElementById("taskNext").onclick = async () => {
-  if(taskIndex >= tasks.length - 1){
+document.getElementById("nextTask").onclick = async () => {
+  if(index >= tasks.length){
     alert("No more tasks");
     return;
   }
 
-  const res = await tasks[taskIndex].show();
+  const res = await tasks[index].show();
 
   if(res && res.done){
-    points += 3;
-    taskIndex++;
+    xp += 3;
+    index++;
     update();
   }
 };
 
-document.getElementById("taskFinish").onclick = async () => {
+document.getElementById("finishTask").onclick = async () => {
   const res = await rewardAd.show();
 
   if(res && res.done){
-    points += 10;
+    xp += 10;
     update();
-    alert("Task completed bonus added!");
   }
 
-  document.getElementById("taskBox").style.display = "none";
+  document.getElementById("taskArea").style.display = "none";
 };
 
 /* =========================
@@ -174,7 +192,7 @@ document.getElementById("taskFinish").onclick = async () => {
 ========================= */
 let lastDaily = localStorage.getItem("daily") || 0;
 
-document.getElementById("daily").onclick = () => {
+document.getElementById("dailyBtn").onclick = () => {
   let now = Date.now();
 
   if(now - lastDaily < 86400000){
@@ -182,7 +200,7 @@ document.getElementById("daily").onclick = () => {
     return;
   }
 
-  points += 20;
+  xp += 20;
   lastDaily = now;
   localStorage.setItem("daily", lastDaily);
 
@@ -190,22 +208,22 @@ document.getElementById("daily").onclick = () => {
 };
 
 /* =========================
-   WITHDRAW (SAFE)
+   WITHDRAW (REQUEST ONLY)
 ========================= */
-document.getElementById("withdraw").onclick = () => {
+document.getElementById("withdrawBtn").onclick = () => {
   let amount = parseInt(document.getElementById("amount").value);
 
   if(!amount || amount < 10000){
-    alert("Minimum is 10,000 points");
+    alert("Minimum withdrawal is 10,000 XP");
     return;
   }
 
-  if(points < amount){
-    alert("Not enough balance");
+  if(xp < amount){
+    alert("Not enough XP");
     return;
   }
 
-  alert("Withdraw request sent for review");
+  alert("Withdraw request submitted for review");
 
   console.log({
     method: document.getElementById("method").value,
