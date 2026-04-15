@@ -3,33 +3,45 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tap & Earn</title>
+<title>Tap & Earn Pro</title>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #000;
-  color: #fff;
-  margin: 0;
-  padding: 20px;
+body{
+  font-family: Arial;
+  background:#0d0d0d;
+  color:#fff;
+  margin:0;
+  padding:20px;
 }
-h1, h2 { margin-bottom: 10px; }
-.section { margin-top: 20px; padding: 15px; background: #111; border-radius: 10px; }
-.btn {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 15px;
-  border-radius: 8px;
-  background: #ffc107;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  text-align: center;
+h1{font-size:22px}
+
+.section{
+  margin-top:20px;
+  padding:15px;
+  background:#1a1a1a;
+  border-radius:10px;
 }
-.btn:active { transform: scale(0.95); }
-.hidden { display: none; }
-input, select {
-  padding: 8px; margin: 5px 0; width: 100%; border-radius: 5px; border: none;
+
+.btn{
+  display:block;
+  margin-top:10px;
+  padding:12px;
+  background:#f5c542;
+  color:#000;
+  font-weight:bold;
+  border-radius:8px;
+  text-align:center;
+  cursor:pointer;
+}
+
+.btn:active{transform:scale(0.97)}
+
+input,select{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border-radius:6px;
+  border:none;
 }
 </style>
 
@@ -39,242 +51,170 @@ input, select {
 
 <body>
 
-<h1>⚡ Tap & Earn point</h1>
+<h1>⚡ Tap & Earn Pro</h1>
 
-<p>Points: <span id="points">0</span></p>
-
-<div class="btn" id="tapBtn">⚡ Tap (1 Tap → 1 Point)</div>
-<div class="btn" id="boostBtn">🚀 Activate 2x Boost (Watch Ad)</div>
-<div class="btn" id="bonusBtn">🎁 Watch Ad for +10 Points</div>
+<p>Balance: <span id="points">0</span> Points</p>
 
 <div class="section">
-<h2>🎁 Daily Reward</h2>
-<div class="btn" id="dailyBtn">Claim Daily Bonus (+20 Points)</div>
+  <h2>📺 Reward Ads</h2>
+  <div class="btn" id="adReward">Watch Ad & Earn 5 Points</div>
 </div>
 
 <div class="section">
-<h2>📋 Tasks</h2>
-<div id="taskIntro">
-  <div class="btn" id="startTasksBtn">Start Tasks</div>
-</div>
-<div id="adsgram-container" class="hidden"></div>
-<div id="nextTaskBtnContainer" class="hidden">
-  <div class="btn" id="nextTaskBtn">➡️ Next Task</div>
-</div>
-<div id="finalTaskBtnContainer" class="hidden">
-  <div class="btn" id="finalTaskBtn">🏁 Finish Tasks</div>
-</div>
+  <h2>🎯 Task Ads</h2>
+  <div class="btn" id="startTask">Start Task Ads</div>
+
+  <div id="taskBox" style="display:none;">
+    <div class="btn" id="taskNext">Next Task</div>
+    <div class="btn" id="taskFinish">Finish Tasks</div>
+  </div>
 </div>
 
 <div class="section">
-<h2>💳 Withdraw</h2>
-<p><b>Minimum withdrawal is 50,000 points ($30)</b></p>
-<select id="method">
-<option value="Litecoin">Litecoin</option>
-<option value="USDT">USDT</option>
-<option value="Payeer">Payeer</option>
-<option value="Bank">Bank Account</option>
-</select>
-<input type="text" id="address" placeholder="Enter wallet or account"/>
-<input type="number" id="amount" placeholder="Minimum 50000"/>
-<div class="btn" id="withdrawBtn">Request Withdraw</div>
+  <h2>🎁 Daily Bonus</h2>
+  <div class="btn" id="daily">Claim Daily (+20)</div>
 </div>
 
 <div class="section">
-<h2>👥 Referral Program</h2>
-<input type="text" id="refLink" readonly/>
-<div class="btn" id="copyRefBtn">Copy Link</div>
+  <h2>💳 Withdraw</h2>
+
+  <p>Minimum: <b>10,000 points</b></p>
+
+  <select id="method">
+    <option>Litecoin</option>
+    <option>USDT</option>
+    <option>Payeer</option>
+    <option>Bank</option>
+  </select>
+
+  <input id="address" placeholder="Wallet"/>
+  <input id="amount" type="number" placeholder="Amount"/>
+
+  <div class="btn" id="withdraw">Request Withdraw</div>
 </div>
 
 <script>
-const webApp = Telegram.WebApp;
-
+const tg = Telegram.WebApp;
 let points = parseInt(localStorage.getItem("points") || "0");
 
-let boostActive = false;
-
-/* SAVE COOLDOWNS */
-let lastBonusAd = parseInt(localStorage.getItem("lastBonusAd")||"0");
-let lastBoostAd = parseInt(localStorage.getItem("lastBoostAd")||"0");
-let lastDaily = parseInt(localStorage.getItem("lastDaily")||"0");
-
-const BONUS_COOLDOWN = 60000;
-const BOOST_COOLDOWN = 120000;
-const DAILY_COOLDOWN = 86400000;
-
-/* UI */
-function updateUI(){
+function update(){
   document.getElementById("points").innerText = points;
-}
-function saveState(){
   localStorage.setItem("points", points);
-  localStorage.setItem("lastBonusAd", lastBonusAd);
-  localStorage.setItem("lastBoostAd", lastBoostAd);
-  localStorage.setItem("lastDaily", lastDaily);
 }
 
-/* 🚫 ANTI AUTO CLICK */
-let lastTapTime = 0;
+/* =========================
+   ADSGRAM BLOCK IDS
+========================= */
 
-document.getElementById("tapBtn").addEventListener("click",()=>{
-  let now = Date.now();
-  if(now - lastTapTime < 100){
-    return; // block spam
-  }
-  lastTapTime = now;
+// Reward ads
+const rewardAd = Adsgram.init({ blockId: "26796" });
 
-  if(boostActive){
-    points += 2;
-  } else {
-    points += 1;
-  }
+// Task ads (you can add more)
+const taskAd1 = Adsgram.init({ blockId: "27333" });
+const taskAd2 = Adsgram.init({ blockId: "27334" });
+const taskAd3 = Adsgram.init({ blockId: "27335" });
 
-  saveState();
-  updateUI();
-});
+/* =========================
+   REWARDED AD (SAFE)
+========================= */
+document.getElementById("adReward").onclick = async () => {
+  try {
+    const res = await rewardAd.show();
 
-/* BOOST */
-document.getElementById("boostBtn").addEventListener("click",()=>{
-  let now = Date.now();
-  if(now - lastBoostAd < BOOST_COOLDOWN){
-    alert("⏳ Wait before using boost again");
+    if(res && res.done){
+      points += 5;
+      update();
+      alert("Reward added!");
+    }
+  } catch(e){}
+};
+
+/* =========================
+   TASK SYSTEM
+========================= */
+let taskIndex = 0;
+const tasks = [taskAd1, taskAd2, taskAd3];
+
+document.getElementById("startTask").onclick = async () => {
+  taskIndex = 0;
+  document.getElementById("taskBox").style.display = "block";
+
+  alert("Task started. Watch ads to continue.");
+};
+
+document.getElementById("taskNext").onclick = async () => {
+  if(taskIndex >= tasks.length - 1){
+    alert("No more tasks");
     return;
   }
 
-  if(!confirm("Watch ad to activate 2x boost?")) return;
+  const res = await tasks[taskIndex].show();
 
-  try{
-    const ad = window.Adsgram.init({blockId:"26796"});
-    ad.show().then(res=>{
-      if(res.done){
-        lastBoostAd = Date.now();
-        boostActive = true;
+  if(res && res.done){
+    points += 3;
+    taskIndex++;
+    update();
+  }
+};
 
-        setTimeout(()=>{
-          boostActive = false;
-        },20000);
+document.getElementById("taskFinish").onclick = async () => {
+  const res = await rewardAd.show();
 
-        saveState();
-      }
-    });
-  }catch(e){}
-});
-
-/* BONUS */
-document.getElementById("bonusBtn").addEventListener("click",()=>{
-  let now = Date.now();
-  if(now - lastBonusAd < BONUS_COOLDOWN){
-    alert("⏳ Wait before next bonus");
-    return;
+  if(res && res.done){
+    points += 10;
+    update();
+    alert("Task completed bonus added!");
   }
 
-  if(!confirm("Watch ad to earn +10 points?")) return;
+  document.getElementById("taskBox").style.display = "none";
+};
 
-  try{
-    const ad = window.Adsgram.init({blockId:"26796"});
-    ad.show().then(res=>{
-      if(res.done){
-        lastBonusAd = Date.now();
-        points += 10;
-        saveState();
-        updateUI();
-      }
-    });
-  }catch(e){}
-});
+/* =========================
+   DAILY BONUS
+========================= */
+let lastDaily = localStorage.getItem("daily") || 0;
 
-/* 🎁 DAILY */
-document.getElementById("dailyBtn").onclick=()=>{
+document.getElementById("daily").onclick = () => {
   let now = Date.now();
-  if(now - lastDaily < DAILY_COOLDOWN){
-    alert("⏳ Come back tomorrow");
+
+  if(now - lastDaily < 86400000){
+    alert("Come back tomorrow");
     return;
   }
 
   points += 20;
-  lastDaily = Date.now();
-  saveState();
-  updateUI();
+  lastDaily = now;
+  localStorage.setItem("daily", lastDaily);
+
+  update();
 };
 
-/* TASK SYSTEM (UNCHANGED STRUCTURE) */
-let currentTaskIndex=0;
-const taskIds=["task-27333","task-27334","task-27335"];
+/* =========================
+   WITHDRAW (SAFE)
+========================= */
+document.getElementById("withdraw").onclick = () => {
+  let amount = parseInt(document.getElementById("amount").value);
 
-function loadTask(blockId){
-  const container=document.getElementById("adsgram-container");
-  container.innerHTML=`<adsgram-task class="task" data-block-id="${blockId}"></adsgram-task>`;
-  container.classList.remove("hidden");
-
-  const task=container.querySelector(".task");
-  task.addEventListener("reward",()=>{
-    points += 3;
-    saveState();
-    updateUI();
-
-    if(currentTaskIndex<taskIds.length-1){
-      document.getElementById("nextTaskBtnContainer").classList.remove("hidden");
-    }else{
-      document.getElementById("finalTaskBtnContainer").classList.remove("hidden");
-    }
-  });
-}
-
-document.getElementById("startTasksBtn").onclick=()=>{
-  currentTaskIndex=0;
-  loadTask(taskIds[currentTaskIndex]);
-};
-
-document.getElementById("nextTaskBtn").onclick=()=>{
-  currentTaskIndex++;
-  document.getElementById("nextTaskBtnContainer").classList.add("hidden");
-  loadTask(taskIds[currentTaskIndex]);
-};
-
-document.getElementById("finalTaskBtn").onclick=()=>{
-  if(!confirm("Watch ad for final bonus?")) return;
-
-  try{
-    const ad = window.Adsgram.init({blockId:"27332"});
-    ad.show().then(res=>{
-      if(res.done){
-        points += 5;
-        saveState();
-        updateUI();
-      }
-    });
-  }catch(e){}
-
-  document.getElementById("adsgram-container").classList.add("hidden");
-  document.getElementById("finalTaskBtnContainer").classList.add("hidden");
-};
-
-/* WITHDRAW */
-document.getElementById("withdrawBtn").onclick=()=>{
-  const amount=parseInt(document.getElementById("amount").value);
-  if(points<amount){
-    alert("Not enough points");
+  if(!amount || amount < 10000){
+    alert("Minimum is 10,000 points");
     return;
   }
-  points-=amount;
-  saveState();
-  updateUI();
-  alert("Request sent");
+
+  if(points < amount){
+    alert("Not enough balance");
+    return;
+  }
+
+  alert("Withdraw request sent for review");
+
+  console.log({
+    method: document.getElementById("method").value,
+    address: document.getElementById("address").value,
+    amount
+  });
 };
 
-/* REFERRAL */
-const user=webApp.initDataUnsafe.user||{};
-const userId=user.id||"guest";
-document.getElementById("refLink").value=`https://t.me/Tapancebot?start=${userId}`;
-
-document.getElementById("copyRefBtn").onclick=()=>{
-  navigator.clipboard.writeText(document.getElementById("refLink").value);
-};
-
-/* INIT */
-document.addEventListener("DOMContentLoaded",()=>{
-  updateUI();
-});
+update();
 </script>
 
 </body>
