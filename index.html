@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tap & Earn Game</title>
+<title>Tap & Earn Safe</title>
 
 <style>
 body{
   margin:0;
   padding:20px;
   font-family: Arial;
-  background:#0c0c0c;
+  background:#0b0b0b;
   color:#fff;
 }
 
 h1{font-size:22px}
 
 .section{
-  margin-top:20px;
+  margin-top:18px;
   padding:15px;
-  background:#1a1a1a;
+  background:#1c1c1c;
   border-radius:10px;
 }
 
@@ -48,43 +48,49 @@ input,select{
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
 </head>
 
 <body>
 
-<h1>⚡ Tap & Earn Game</h1>
+<h1>⚡ Tap & Earn Safe</h1>
 
-<p>XP Balance: <span id="points">0</span></p>
+<p>XP Balance: <b id="points">0</b></p>
 
+<!-- TAP -->
 <div class="section">
-  <h2>🎮 Tap System (XP)</h2>
+  <h2>🎮 Tap System</h2>
   <div class="btn" id="tapBtn">Tap +1 XP</div>
 </div>
 
+<!-- REWARD AD -->
 <div class="section">
-  <h2>📺 Reward Ads</h2>
-  <div class="btn" id="rewardAd">Watch Ad (Bonus XP)</div>
+  <h2>📺 Reward Ad</h2>
+  <div class="btn" id="rewardAdBtn">Watch Ad + Bonus XP</div>
 </div>
 
+<!-- TASK (1 AD ONLY) -->
 <div class="section">
   <h2>🎯 Task Mode</h2>
-  <div class="btn" id="startTask">Start Tasks</div>
+  <div class="btn" id="startTask">Start Task</div>
 
   <div id="taskArea" style="display:none;">
-    <div class="btn" id="nextTask">Next Task</div>
+    <div class="btn" id="runTaskAd">Watch Task Ad</div>
     <div class="btn" id="finishTask">Finish Task</div>
   </div>
 </div>
 
+<!-- DAILY -->
 <div class="section">
-  <h2>🎁 Daily Reward</h2>
+  <h2>🎁 Daily Bonus</h2>
   <div class="btn" id="dailyBtn">Claim Daily XP</div>
 </div>
 
+<!-- WITHDRAW -->
 <div class="section">
   <h2>💳 Withdraw</h2>
 
-  <p>Minimum: <b>10,000 XP</b></p>
+  <p>Minimum: 10,000 XP</p>
 
   <select id="method">
     <option>Litecoin</option>
@@ -100,136 +106,125 @@ input,select{
 </div>
 
 <script>
-const tg = Telegram.WebApp;
+const tg = window.Telegram?.WebApp;
+tg?.expand?.();
 
 let xp = parseInt(localStorage.getItem("xp") || "0");
+let lastDaily = parseInt(localStorage.getItem("daily") || "0");
 
 function update(){
   document.getElementById("points").innerText = xp;
   localStorage.setItem("xp", xp);
 }
 
-/* =========================
-   ADSGRAM BLOCKS
-========================= */
-const rewardAd = Adsgram.init({ blockId: "26796" });
-const taskAd1 = Adsgram.init({ blockId: "27333" });
-const taskAd2 = Adsgram.init({ blockId: "27334" });
-const taskAd3 = Adsgram.init({ blockId: "27335" });
+/* ======================
+   ADSGRAM (SAFE STRUCTURE)
+====================== */
+let rewardAd, taskAd;
 
-/* =========================
-   TAP SYSTEM (SAFE XP ONLY)
-========================= */
+function initAds(){
+  if(typeof Adsgram === "undefined") return;
+
+  rewardAd = Adsgram.init({ blockId: "26796" });
+  taskAd = Adsgram.init({ blockId: "27333" }); // ONLY ONE TASK AD
+}
+
+window.addEventListener("load", initAds);
+
+/* ======================
+   TAP SYSTEM
+====================== */
 let lastTap = 0;
 
 document.getElementById("tapBtn").onclick = () => {
   let now = Date.now();
-
-  if(now - lastTap < 150){
-    return;
-  }
+  if(now - lastTap < 200) return;
 
   lastTap = now;
-
   xp += 1;
   update();
 };
 
-/* =========================
+/* ======================
    REWARD AD
-========================= */
-document.getElementById("rewardAd").onclick = async () => {
-  try {
+====================== */
+document.getElementById("rewardAdBtn").onclick = async () => {
+  if(!rewardAd) return alert("Ad not ready");
+
+  try{
     const res = await rewardAd.show();
 
-    if(res && res.done){
+    if(res?.done){
       xp += 5;
       update();
-      alert("Bonus XP added!");
     }
-  } catch(e){}
+  }catch(e){}
 };
 
-/* =========================
-   TASK SYSTEM
-========================= */
-let index = 0;
-const tasks = [taskAd1, taskAd2, taskAd3];
-
+/* ======================
+   TASK SYSTEM (SAFE)
+====================== */
 document.getElementById("startTask").onclick = () => {
-  index = 0;
   document.getElementById("taskArea").style.display = "block";
 };
 
-document.getElementById("nextTask").onclick = async () => {
-  if(index >= tasks.length){
-    alert("No more tasks");
-    return;
-  }
+document.getElementById("runTaskAd").onclick = async () => {
+  if(!taskAd) return alert("Task ad not ready");
 
-  const res = await tasks[index].show();
+  try{
+    const res = await taskAd.show();
 
-  if(res && res.done){
-    xp += 3;
-    index++;
-    update();
-  }
+    if(res?.done){
+      xp += 3;
+      update();
+      alert("Task completed!");
+    }
+  }catch(e){}
 };
 
-document.getElementById("finishTask").onclick = async () => {
-  const res = await rewardAd.show();
-
-  if(res && res.done){
-    xp += 10;
-    update();
-  }
-
+document.getElementById("finishTask").onclick = () => {
+  xp += 5;
+  update();
   document.getElementById("taskArea").style.display = "none";
 };
 
-/* =========================
+/* ======================
    DAILY BONUS
-========================= */
-let lastDaily = localStorage.getItem("daily") || 0;
-
+====================== */
 document.getElementById("dailyBtn").onclick = () => {
   let now = Date.now();
 
   if(now - lastDaily < 86400000){
-    alert("Come back tomorrow");
-    return;
+    return alert("Come back tomorrow");
   }
 
   xp += 20;
   lastDaily = now;
   localStorage.setItem("daily", lastDaily);
-
   update();
 };
 
-/* =========================
-   WITHDRAW (REQUEST ONLY)
-========================= */
+/* ======================
+   WITHDRAW
+====================== */
 document.getElementById("withdrawBtn").onclick = () => {
   let amount = parseInt(document.getElementById("amount").value);
 
   if(!amount || amount < 10000){
-    alert("Minimum withdrawal is 10,000 XP");
-    return;
+    return alert("Minimum withdrawal is 10,000 XP");
   }
 
   if(xp < amount){
-    alert("Not enough XP");
-    return;
+    return alert("Not enough XP");
   }
-
-  alert("Withdraw request submitted for review");
 
   console.log({
     method: document.getElementById("method").value,
     address: document.getElementById("address").value,
     amount
   });
+
+  alert("Withdraw request sent");
 };
 
 update();
