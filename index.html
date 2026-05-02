@@ -126,7 +126,7 @@ function initAds(){
   if(typeof Adsgram === "undefined") return;
 
   rewardAd = Adsgram.init({ blockId: "29216" });
-  taskAd = Adsgram.init({ blockId: "29217" }); // unchanged
+  taskAd = Adsgram.init({ blockId: "29217" });
 }
 
 window.addEventListener("load", initAds);
@@ -153,7 +153,6 @@ document.getElementById("rewardAdBtn").onclick = async () => {
 
   try{
     const res = await rewardAd.show();
-
     if(res?.done){
       xp += 5;
       update();
@@ -173,7 +172,6 @@ document.getElementById("runTaskAd").onclick = async () => {
 
   try{
     const res = await taskAd.show();
-
     if(res?.done){
       xp += 3;
       update();
@@ -189,7 +187,7 @@ document.getElementById("finishTask").onclick = () => {
 };
 
 /* ======================
-   DAILY BONUS (ADSGRAM TASK SDK FLOW)
+   DAILY BONUS (ADVANCED TASK FLOW)
 ====================== */
 
 const DAILY_TASK_BLOCKS = [
@@ -199,14 +197,43 @@ const DAILY_TASK_BLOCKS = [
 ];
 
 let dailyIndex = 0;
+let dailyRunning = false;
 
-// container for tasks (safe, doesn't affect UI)
+let dailySection = document.getElementById("dailyBtn").parentNode;
+
 let dailyContainer = document.createElement("div");
 dailyContainer.style.marginTop = "10px";
-document.body.appendChild(dailyContainer);
+dailySection.appendChild(dailyContainer);
+
+let progressText = document.createElement("div");
+progressText.style.marginTop = "8px";
+progressText.style.fontSize = "14px";
+
+let progressBarWrap = document.createElement("div");
+progressBarWrap.style.width = "100%";
+progressBarWrap.style.height = "8px";
+progressBarWrap.style.background = "#333";
+progressBarWrap.style.borderRadius = "6px";
+progressBarWrap.style.marginTop = "6px";
+
+let progressBar = document.createElement("div");
+progressBar.style.height = "100%";
+progressBar.style.width = "0%";
+progressBar.style.background = "#f6c445";
+progressBar.style.borderRadius = "6px";
+
+progressBarWrap.appendChild(progressBar);
+dailySection.appendChild(progressText);
+dailySection.appendChild(progressBarWrap);
+
+function updateProgress(){
+  progressText.innerText = `Task ${dailyIndex + 1}/3`;
+  progressBar.style.width = ((dailyIndex) / 3 * 100) + "%";
+}
 
 function loadDailyTask(){
   dailyContainer.innerHTML = "";
+  updateProgress();
 
   const taskEl = document.createElement("adsgram-task");
   taskEl.setAttribute("data-block-id", DAILY_TASK_BLOCKS[dailyIndex]);
@@ -217,11 +244,14 @@ function loadDailyTask(){
     if(dailyIndex < DAILY_TASK_BLOCKS.length){
       loadDailyTask();
     } else {
-      xp += 100;
+      xp += 1200;
       update();
 
+      progressText.innerText = "Completed ✔️";
+      progressBar.style.width = "100%";
+
       let msg = document.createElement("div");
-      msg.innerText = "🎉 You're successful receive 100 welcome daily bonus";
+      msg.innerText = "🎉 You're successful receive 1200 welcome daily bonus";
       msg.style.position = "fixed";
       msg.style.bottom = "20px";
       msg.style.left = "50%";
@@ -232,10 +262,14 @@ function loadDailyTask(){
       msg.style.zIndex = "9999";
 
       document.body.appendChild(msg);
-
       setTimeout(()=>msg.remove(),30000);
 
       dailyIndex = 0;
+      dailyRunning = false;
+
+      document.getElementById("dailyBtn").style.opacity = "1";
+      document.getElementById("dailyBtn").style.pointerEvents = "auto";
+
       lastDaily = Date.now();
       localStorage.setItem("daily", lastDaily);
 
@@ -250,12 +284,19 @@ function loadDailyTask(){
   }
 }
 
-document.getElementById("dailyBtn").onclick = () => {
+document.getElementById("dailyBtn").onclick = function(){
   let now = Date.now();
 
   if(now - lastDaily < 86400000){
     return alert("Come back tomorrow");
   }
+
+  if(dailyRunning) return;
+
+  dailyRunning = true;
+
+  this.style.opacity = "0.6";
+  this.style.pointerEvents = "none";
 
   dailyIndex = 0;
   loadDailyTask();
