@@ -45,7 +45,7 @@ input,select{
   border-radius:6px;
 }
 
-/* ================= JOIN POPUP (ADDED ONLY) ================= */
+/* JOIN POPUP (ONLY ADDITION) */
 .join-popup{
   position:fixed;
   top:0;
@@ -65,14 +65,16 @@ input,select{
   margin-bottom:16px;
 }
 
+/* CHANGED TO MAIN INDEX COLOR */
 .join-popup button{
   padding:14px 20px;
   font-size:16px;
   border:none;
   border-radius:12px;
   cursor:pointer;
-  background:red;
-  color:#fff;
+  background:#f6c445;
+  color:#000;
+  font-weight:bold;
 }
 </style>
 
@@ -87,19 +89,16 @@ input,select{
 
 <p>XP Balance: <b id="points">0</b></p>
 
-<!-- TAP -->
 <div class="section">
   <h2>🎮 Tap System</h2>
   <div class="btn" id="tapBtn">Tap +1 XP</div>
 </div>
 
-<!-- REWARD AD -->
 <div class="section">
   <h2>📺 Reward Ad</h2>
   <div class="btn" id="rewardAdBtn">Watch Ad + Bonus XP</div>
 </div>
 
-<!-- TASK (1 AD ONLY) -->
 <div class="section">
   <h2>🎯 Task Mode</h2>
   <div class="btn" id="startTask">Start Task</div>
@@ -110,13 +109,11 @@ input,select{
   </div>
 </div>
 
-<!-- DAILY -->
 <div class="section">
   <h2>🎁 Daily Bonus</h2>
   <div class="btn" id="dailyBtn">Claim Daily XP</div>
 </div>
 
-<!-- WITHDRAW -->
 <div class="section">
   <h2>💳 Withdraw</h2>
 
@@ -135,10 +132,10 @@ input,select{
   <div class="btn" id="withdrawBtn">Request Withdraw</div>
 </div>
 
-<!-- JOIN POPUP (ADDED ONLY) -->
+<!-- JOIN POPUP -->
 <div class="join-popup" id="joinPopup">
   <h2>Join Our Channel</h2>
-  <button id="joinBtn">Join Channel & Get Bonus XP</button>
+  <button id="joinBtn">Join Channel & Get 1 XP</button>
 </div>
 
 <script>
@@ -153,31 +150,25 @@ function update(){
   localStorage.setItem("xp", xp);
 }
 
-/* ======================
-   ADSGRAM (UNCHANGED)
-====================== */
+/* ADSGRAM */
 let rewardAd, taskAd;
 
 function initAds(){
   if(typeof Adsgram === "undefined") return;
-
   rewardAd = Adsgram.init({ blockId: "29216" });
   taskAd = Adsgram.init({ blockId: "29217" });
 }
 
 window.addEventListener("load", initAds);
 
-/* ======================
-   PRELOAD AD + JOIN POPUP (ADDED ONLY)
-====================== */
+/* PRELOAD AD + JOIN POPUP */
 let preloadAd;
 const joinPopup = document.getElementById("joinPopup");
 const joinBtn = document.getElementById("joinBtn");
 
 function initPreloadAd(){
   if(typeof Adsgram === "undefined") return;
-
-  preloadAd = Adsgram.init({ blockId: "29217" });
+  preloadAd = Adsgram.init({ blockId: "29218" });
 }
 
 window.addEventListener("load", async () => {
@@ -194,35 +185,29 @@ window.addEventListener("load", async () => {
 });
 
 joinBtn.onclick = () => {
-  xp += 10;
+  xp += 1;
   update();
 
   joinPopup.style.display = "none";
-  alert("🎉 Bonus XP received!");
+
+  alert("🎉 You earned 1 XP!");
 
   window.open("https://t.me/yourchannel", "_blank");
 };
 
-/* ======================
-   TAP SYSTEM
-====================== */
+/* TAP */
 let lastTap = 0;
-
 document.getElementById("tapBtn").onclick = () => {
   let now = Date.now();
   if(now - lastTap < 200) return;
-
   lastTap = now;
   xp += 1;
   update();
 };
 
-/* ======================
-   REWARD AD
-====================== */
+/* REWARD AD */
 document.getElementById("rewardAdBtn").onclick = async () => {
   if(!rewardAd) return alert("Ad not ready");
-
   try{
     const res = await rewardAd.show();
     if(res?.done){
@@ -232,16 +217,13 @@ document.getElementById("rewardAdBtn").onclick = async () => {
   }catch(e){}
 };
 
-/* ======================
-   TASK SYSTEM
-====================== */
+/* TASK */
 document.getElementById("startTask").onclick = () => {
   document.getElementById("taskArea").style.display = "block";
 };
 
 document.getElementById("runTaskAd").onclick = async () => {
   if(!taskAd) return alert("Task ad not ready");
-
   try{
     const res = await taskAd.show();
     if(res?.done){
@@ -258,10 +240,7 @@ document.getElementById("finishTask").onclick = () => {
   document.getElementById("taskArea").style.display = "none";
 };
 
-/* ======================
-   DAILY BONUS (UNCHANGED)
-====================== */
-
+/* DAILY */
 const DAILY_TASK_BLOCKS = ["task-29250","task-29251","task-29252"];
 let dailyIndex = 0;
 let dailyRunning = false;
@@ -314,16 +293,10 @@ function loadDailyTask(){
       xp += 1200;
       update();
 
-      progressText.innerText = "Completed ✔️";
-      progressBar.style.width = "100%";
-
-      alert("🎉 You received 1200 XP bonus!");
+      alert("🎉 Daily bonus completed!");
 
       dailyIndex = 0;
       dailyRunning = false;
-
-      document.getElementById("dailyBtn").style.opacity = "1";
-      document.getElementById("dailyBtn").style.pointerEvents = "auto";
 
       lastDaily = Date.now();
       localStorage.setItem("daily", lastDaily);
@@ -339,7 +312,6 @@ function loadDailyTask(){
 
 document.getElementById("dailyBtn").onclick = function(){
   let now = Date.now();
-
   if(now - lastDaily < 86400000){
     return alert("Come back tomorrow");
   }
@@ -347,16 +319,11 @@ document.getElementById("dailyBtn").onclick = function(){
   if(dailyRunning) return;
 
   dailyRunning = true;
-  this.style.opacity = "0.6";
-  this.style.pointerEvents = "none";
-
   dailyIndex = 0;
   loadDailyTask();
 };
 
-/* ======================
-   WITHDRAW (UNCHANGED)
-====================== */
+/* WITHDRAW */
 document.getElementById("withdrawBtn").onclick = () => {
   let amount = parseInt(document.getElementById("amount").value);
 
