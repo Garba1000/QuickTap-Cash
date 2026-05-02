@@ -126,7 +126,7 @@ function initAds(){
   if(typeof Adsgram === "undefined") return;
 
   rewardAd = Adsgram.init({ blockId: "29216" });
-  taskAd = Adsgram.init({ blockId: "29217" }); // ONLY ONE TASK AD
+  taskAd = Adsgram.init({ blockId: "29217" }); // unchanged
 }
 
 window.addEventListener("load", initAds);
@@ -189,8 +189,67 @@ document.getElementById("finishTask").onclick = () => {
 };
 
 /* ======================
-   DAILY BONUS
+   DAILY BONUS (ADSGRAM TASK SDK FLOW)
 ====================== */
+
+const DAILY_TASK_BLOCKS = [
+  "task-23647",
+  "task-34768",
+  "task-56987"
+];
+
+let dailyIndex = 0;
+
+// container for tasks (safe, doesn't affect UI)
+let dailyContainer = document.createElement("div");
+dailyContainer.style.marginTop = "10px";
+document.body.appendChild(dailyContainer);
+
+function loadDailyTask(){
+  dailyContainer.innerHTML = "";
+
+  const taskEl = document.createElement("adsgram-task");
+  taskEl.setAttribute("data-block-id", DAILY_TASK_BLOCKS[dailyIndex]);
+
+  taskEl.addEventListener("reward", () => {
+    dailyIndex++;
+
+    if(dailyIndex < DAILY_TASK_BLOCKS.length){
+      loadDailyTask();
+    } else {
+      xp += 100;
+      update();
+
+      let msg = document.createElement("div");
+      msg.innerText = "🎉 You're successful receive 100 welcome daily bonus";
+      msg.style.position = "fixed";
+      msg.style.bottom = "20px";
+      msg.style.left = "50%";
+      msg.style.transform = "translateX(-50%)";
+      msg.style.background = "#000";
+      msg.style.padding = "12px 16px";
+      msg.style.borderRadius = "10px";
+      msg.style.zIndex = "9999";
+
+      document.body.appendChild(msg);
+
+      setTimeout(()=>msg.remove(),30000);
+
+      dailyIndex = 0;
+      lastDaily = Date.now();
+      localStorage.setItem("daily", lastDaily);
+
+      dailyContainer.innerHTML = "";
+    }
+  });
+
+  dailyContainer.appendChild(taskEl);
+
+  if(typeof taskEl.load === "function"){
+    taskEl.load();
+  }
+}
+
 document.getElementById("dailyBtn").onclick = () => {
   let now = Date.now();
 
@@ -198,10 +257,8 @@ document.getElementById("dailyBtn").onclick = () => {
     return alert("Come back tomorrow");
   }
 
-  xp += 20;
-  lastDaily = now;
-  localStorage.setItem("daily", lastDaily);
-  update();
+  dailyIndex = 0;
+  loadDailyTask();
 };
 
 /* ======================
